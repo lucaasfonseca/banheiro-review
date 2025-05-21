@@ -1,14 +1,21 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: {
+    flex: 1,
+    padding: 16,
+  },
   reviewBox: {
     marginTop: 16,
     backgroundColor: "#f2f2f2",
     padding: 12,
     borderRadius: 8,
   },
-  title: { fontWeight: "bold", fontSize: 16, marginTop: 8 },
+  title: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginTop: 8,
+  },
   address: {
     fontSize: 12,
     color: "#555",
@@ -47,5 +54,29 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 12,
   },
-  empty: { marginTop: 20, textAlign: "center", color: "#666" },
+  empty: {
+    marginTop: 20,
+    textAlign: "center",
+    color: "#666",
+  },
+  floatingButton: {
+    position: "absolute",
+    bottom: 24,
+    left: 20,
+    right: 20,
+    backgroundColor: "#007bff",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  floatingButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });

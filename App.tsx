@@ -1,14 +1,17 @@
-// App.tsx
-import "./src/services/firebase"; // ✅ importa uma vez para inicializar
+import "./src/services/firebase";
 
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
+
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import { ReviewProvider } from "./src/context/ReviewContext"; // <-- AQUI
+
 import AddReviewScreen from "./src/screens/AddReviewScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
+import RegisterScreen from "./src/screens/RegisterScreen";
 import ReviewDetailScreen from "./src/screens/ReviewDetailScreen";
 import { RootStackParamList } from "./src/types/navigation";
 
@@ -36,6 +39,7 @@ function Routes() {
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
       )}
+      <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
   );
 }
@@ -43,9 +47,11 @@ function Routes() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <Routes />
-      </NavigationContainer>
+      <ReviewProvider>
+        <NavigationContainer>
+          <Routes />
+        </NavigationContainer>
+      </ReviewProvider>
     </AuthProvider>
   );
 }
