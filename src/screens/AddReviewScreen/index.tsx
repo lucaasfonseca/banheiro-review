@@ -9,12 +9,15 @@ import {
   Button,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
   TouchableWithoutFeedback,
 } from "react-native";
 
+import { Platform } from "react-native";
 import RatingStars from "../../components/RatingStars";
 import TagSelector from "../../components/TagSelector";
 import { Review, useReviews } from "../../context/ReviewContext";
@@ -134,48 +137,57 @@ export default function AddReviewScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Text>Nome do lugar:</Text>
-        <TextInput
-          style={styles.input}
-          value={placeName}
-          onChangeText={setPlaceName}
-        />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text>Nome do lugar:</Text>
+            <TextInput
+              style={styles.input}
+              value={placeName}
+              onChangeText={setPlaceName}
+            />
 
-        <Text>Comentário:</Text>
-        <TextInput
-          style={[styles.input, { height: 80 }]}
-          value={comment}
-          onChangeText={setComment}
-          multiline
-        />
+            <Text>Comentário:</Text>
+            <TextInput
+              style={[styles.input, { height: 80 }]}
+              value={comment}
+              onChangeText={setComment}
+              multiline
+            />
 
-        <Text>Nota:</Text>
-        <RatingStars rating={rating} onChange={setRating} />
+            <Text>Nota:</Text>
+            <RatingStars rating={rating} onChange={setRating} />
 
-        <Button title="Escolher imagem" onPress={handlePickImage} />
-        {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
+            <Button title="Escolher imagem" onPress={handlePickImage} />
+            {imageUri && (
+              <Image source={{ uri: imageUri }} style={styles.image} />
+            )}
 
-        <TagSelector
-          title="Pontos Positivos"
-          availableTags={positiveTags}
-          selectedTags={positives}
-          onChange={setPositives}
-        />
+            <TagSelector
+              title="Pontos Positivos"
+              availableTags={positiveTags}
+              selectedTags={positives}
+              onChange={setPositives}
+            />
 
-        <TagSelector
-          title="Pontos Negativos"
-          availableTags={negativeTags}
-          selectedTags={negatives}
-          onChange={setNegatives}
-        />
+            <TagSelector
+              title="Pontos Negativos"
+              availableTags={negativeTags}
+              selectedTags={negatives}
+              onChange={setNegatives}
+            />
 
-        <Button title="Salvar Avaliação" onPress={handleSubmit} />
-      </ScrollView>
-    </TouchableWithoutFeedback>
+            <Button title="Salvar Avaliação" onPress={handleSubmit} />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
