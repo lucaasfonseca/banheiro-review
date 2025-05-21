@@ -10,16 +10,16 @@ import {
   Image,
   Keyboard,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableWithoutFeedback,
 } from "react-native";
 
-import RatingStars from "../components/RatingStars";
-import TagSelector from "../components/TagSelector";
-import { Review, useReviews } from "../context/ReviewContext";
-import { RootStackParamList } from "../types/navigation";
+import RatingStars from "../../components/RatingStars";
+import TagSelector from "../../components/TagSelector";
+import { Review, useReviews } from "../../context/ReviewContext";
+import { RootStackParamList } from "../../types/navigation";
+import { styles } from "./styles";
 
 export default function AddReviewScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "AddReview">>();
@@ -38,10 +38,10 @@ export default function AddReviewScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [address, setAddress] = useState<string | undefined>(undefined);
 
   const positiveTags = ["Limpo", "Tem papel", "Privado", "Acessível"];
   const negativeTags = ["Cheiro ruim", "Sujo", "Barulhento", "Sem papel"];
-  const [address, setAddress] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (editingReview) {
@@ -179,19 +179,3 @@ export default function AddReviewScreen() {
     </TouchableWithoutFeedback>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 8,
-    borderRadius: 6,
-  },
-  image: {
-    width: "100%",
-    height: 200,
-    marginTop: 10,
-    borderRadius: 8,
-  },
-});
