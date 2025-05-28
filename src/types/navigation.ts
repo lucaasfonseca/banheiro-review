@@ -1,4 +1,4 @@
-import { Review } from "../context/ReviewContext";
+import { Review } from "../models/Review";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -6,4 +6,6 @@ export type RootStackParamList = {
   Home: undefined;
   AddReview: { review?: Review };
   ReviewDetail: { review: Review };
+  Favorites: undefined;
+  Map: undefined; // ⬅️ adicione aqui
 };

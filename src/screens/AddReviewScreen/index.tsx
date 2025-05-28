@@ -1,5 +1,4 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import * as Crypto from "expo-crypto";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
@@ -14,14 +13,13 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
+import RatingStars from "../../components/RatingStars";
+import TagSelector from "../../components/TagSelector";
 import { Review, useReviews } from "../../context/ReviewContext";
 import { RootStackParamList } from "../../types/navigation";
 import { styles } from "./styles";
-import RatingStars from "../../components/RatingStars";
-import TagSelector from "../../components/TagSelector";
 
 export default function AddReviewScreen() {
   const navigation = useNavigation();
@@ -35,7 +33,10 @@ export default function AddReviewScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [positives, setPositives] = useState<string[]>([]);
   const [negatives, setNegatives] = useState<string[]>([]);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [address, setAddress] = useState<string | undefined>(undefined);
 
   const positiveTags = ["Limpo", "Privado", "Acessível", "Tem papel"];
@@ -62,7 +63,10 @@ export default function AddReviewScreen() {
       if (status !== "granted") return;
 
       const loc = await Location.getCurrentPositionAsync({});
-      const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+      const coords = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      };
       setLocation(coords);
 
       try {
@@ -92,37 +96,54 @@ export default function AddReviewScreen() {
     }
   };
 
-  const handleSubmit = () => {
-    if (!placeName || !comment) {
+  const handleSubmit = async () => {
+    if (!placeName || !comment || !location) {
       Alert.alert("Erro", "Preencha todos os campos obrigatórios.");
       return;
     }
 
-    const reviewToSave: Review = {
-      id: editingReview?.id || Crypto.randomUUID(),
+    const reviewToSave = {
       placeName,
       comment,
       rating,
-      imageUri,
+      imageUri: imageUri ?? "",
       positives,
       negatives,
-      location: location ?? undefined,
-      address,
+      location,
+      address: address ?? "",
     };
 
-    editingReview ? updateReview(reviewToSave) : addReview(reviewToSave);
-    Alert.alert("Sucesso", "Avaliação salva com sucesso!");
-    navigation.goBack();
+    try {
+      if (editingReview) {
+        updateReview({
+          ...editingReview,
+          ...reviewToSave,
+        } as Review);
+      } else {
+        await addReview(reviewToSave); // salva direto no Firestore
+      }
+
+      Alert.alert("Sucesso", "Avaliação salva com sucesso!");
+      navigation.goBack();
+    } catch (err) {
+      console.error("Erro ao salvar:", err);
+      Alert.alert("Erro", "Não foi possível salvar a avaliação.");
+    }
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>🧻 Avalie o Banheiro</Text>
+          <Text style={styles.header}>🧻 Avalie o Banheiro</Text>
 
-
-          <TouchableOpacity style={styles.imageContainer} onPress={handlePickImage}>
+          <TouchableOpacity
+            style={styles.imageContainer}
+            onPress={handlePickImage}
+          >
             {imageUri ? (
               <>
                 <Image source={{ uri: imageUri }} style={styles.image} />
@@ -160,7 +181,6 @@ export default function AddReviewScreen() {
             onChange={setPositives}
             allowCustom={true}
             type="positive"
-
           />
 
           <TagSelector
@@ -170,7 +190,6 @@ export default function AddReviewScreen() {
             onChange={setNegatives}
             allowCustom={true}
             type="negative"
-
           />
 
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>

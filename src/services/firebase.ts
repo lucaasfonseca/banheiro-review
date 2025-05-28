@@ -1,6 +1,7 @@
 // src/services/firebase.ts
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth"; // ← esta é a versão suportada no Expo Go
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // ⬅️ adicione esta linha
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQgFl75xseAOheTOt-fex3Paxu9g7Z0IE",
@@ -14,5 +15,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app); // ⬅️ instância do Firestore
 
-export { app, auth };
+export { app, auth, db }; // ⬅️ exporte também o db

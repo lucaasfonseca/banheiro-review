@@ -1,29 +1,35 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  addDoc,
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  onSnapshot,
+  updateDoc,
+} from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { auth, db } from "../services/firebase";
 
 export type Review = {
   id: string;
   placeName: string;
-  comment: string;
   rating: number;
-  imageUri?: string | null;
+  comment: string;
+  imageUri?: string;
+  address?: string;
+  location: { latitude: number; longitude: number };
   positives: string[];
   negatives: string[];
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  address?: string; // <-- ADICIONE AQUI
+  likedBy?: string[];
+  createdBy: string;
 };
 
 type ReviewContextType = {
   reviews: Review[];
-  addReview: (review: Review) => void;
+  addReview: (review: Omit<Review, "id" | "createdBy">) => Promise<void>;
   updateReview: (review: Review) => void;
   deleteReview: (id: string) => void;
 };
-
-const STORAGE_KEY = "@banheiro_reviews";
 
 const ReviewContext = createContext<ReviewContextType | undefined>(undefined);
 
@@ -31,34 +37,25 @@ export function ReviewProvider({ children }: { children: React.ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
-    loadReviews();
+    const unsubscribe = onSnapshot(collection(db, "reviews"), (snapshot) => {
+      const firebaseReviews: Review[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Review[];
+      setReviews(firebaseReviews);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    saveReviews();
-  }, [reviews]);
+  const addReview = async (review: Omit<Review, "id" | "createdBy">) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
 
-  const loadReviews = async () => {
-    try {
-      const data = await AsyncStorage.getItem(STORAGE_KEY);
-      if (data) {
-        setReviews(JSON.parse(data));
-      }
-    } catch (error) {
-      console.error("Erro ao carregar avaliações:", error);
-    }
-  };
-
-  const saveReviews = async () => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
-    } catch (error) {
-      console.error("Erro ao salvar avaliações:", error);
-    }
-  };
-
-  const addReview = (review: Review) => {
-    setReviews((prev) => [...prev, review]);
+    await addDoc(collection(db, "reviews"), {
+      ...review,
+      createdBy: user.uid,
+    });
   };
 
   const updateReview = (updated: Review) => {
@@ -76,6 +73,19 @@ export function ReviewProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ReviewContext.Provider>
   );
+}
+
+// ❤️ Curtir/descurtir review
+export async function toggleLike(
+  reviewId: string,
+  userId: string,
+  alreadyLiked: boolean
+) {
+  const reviewRef = doc(db, "reviews", reviewId);
+
+  await updateDoc(reviewRef, {
+    likedBy: alreadyLiked ? arrayRemove(userId) : arrayUnion(userId),
+  });
 }
 
 export function useReviews() {

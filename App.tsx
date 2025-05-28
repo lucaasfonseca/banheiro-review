@@ -9,8 +9,10 @@ import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { ReviewProvider } from "./src/context/ReviewContext"; // <-- AQUI
 
 import AddReviewScreen from "./src/screens/AddReviewScreen";
+import FavoritesScreen from "./src/screens/FavoritesScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
+import MapScreen from "./src/screens/MapScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import ReviewDetailScreen from "./src/screens/ReviewDetailScreen";
 import { RootStackParamList } from "./src/types/navigation";
@@ -35,6 +37,12 @@ function Routes() {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="AddReview" component={AddReviewScreen} />
           <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} />
+          <Stack.Screen name="Favorites" component={FavoritesScreen} />
+          <Stack.Screen
+            name="Map"
+            component={MapScreen}
+            options={{ headerShown: true, title: "Mapa" }}
+          />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
