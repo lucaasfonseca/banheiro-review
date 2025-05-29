@@ -3,6 +3,7 @@ import {
   arrayRemove,
   arrayUnion,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   updateDoc,
@@ -20,15 +21,17 @@ export type Review = {
   location: { latitude: number; longitude: number };
   positives: string[];
   negatives: string[];
-  likedBy?: string[];
+  likedBy: string[];
   createdBy: string;
 };
 
 type ReviewContextType = {
   reviews: Review[];
-  addReview: (review: Omit<Review, "id" | "createdBy">) => Promise<void>;
+  addReview: (
+    review: Omit<Review, "id" | "createdBy" | "likedBy">
+  ) => Promise<void>;
   updateReview: (review: Review) => void;
-  deleteReview: (id: string) => void;
+  deleteReview: (id: string) => Promise<void>;
 };
 
 const ReviewContext = createContext<ReviewContextType | undefined>(undefined);
@@ -38,23 +41,38 @@ export function ReviewProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "reviews"), (snapshot) => {
-      const firebaseReviews: Review[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Review[];
+      const firebaseReviews: Review[] = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          placeName: data.placeName,
+          rating: data.rating,
+          comment: data.comment,
+          imageUri: data.imageUri,
+          address: data.address,
+          location: data.location,
+          positives: data.positives ?? [],
+          negatives: data.negatives ?? [],
+          likedBy: data.likedBy ?? [],
+          createdBy: data.createdBy,
+        };
+      });
       setReviews(firebaseReviews);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const addReview = async (review: Omit<Review, "id" | "createdBy">) => {
+  const addReview = async (
+    review: Omit<Review, "id" | "createdBy" | "likedBy">
+  ) => {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
 
     await addDoc(collection(db, "reviews"), {
       ...review,
       createdBy: user.uid,
+      likedBy: [],
     });
   };
 
@@ -62,8 +80,9 @@ export function ReviewProvider({ children }: { children: React.ReactNode }) {
     setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   };
 
-  const deleteReview = (id: string) => {
+  const deleteReview = async (id: string) => {
     setReviews((prev) => prev.filter((r) => r.id !== id));
+    await deleteDoc(doc(db, "reviews", id));
   };
 
   return (
@@ -75,7 +94,6 @@ export function ReviewProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ❤️ Curtir/descurtir review
 export async function toggleLike(
   reviewId: string,
   userId: string,

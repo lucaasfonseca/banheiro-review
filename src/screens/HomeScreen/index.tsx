@@ -1,21 +1,29 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
-import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import haversine from "haversine";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import CommentCard from "../../components/CommentCard";
+import ReviewCard from "../../components/ReviewCard";
 import { useAuth } from "../../context/AuthContext";
-import { useReviews } from "../../context/ReviewContext";
+import { toggleLike, useReviews } from "../../context/ReviewContext";
 import { db } from "../../services/firebase";
 import { RootStackParamList } from "../../types/navigation";
 import { styles } from "./styles";
@@ -29,6 +37,10 @@ export default function HomeScreen() {
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObjectCoords | null>(null);
   const [search, setSearch] = useState("");
+  const [latestComments, setLatestComments] = useState<Record<string, any[]>>(
+    {}
+  );
+  const [newComments, setNewComments] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -46,6 +58,51 @@ export default function HomeScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    const unsubscribes: (() => void)[] = [];
+
+    reviews.forEach((review) => {
+      const q = query(
+        collection(db, "reviews", review.id, "comments"),
+        orderBy("createdAt", "desc"),
+        limit(2)
+      );
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const comments = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setLatestComments((prev) => ({ ...prev, [review.id]: comments }));
+      });
+
+      unsubscribes.push(unsubscribe);
+    });
+
+    return () => unsubscribes.forEach((fn) => fn());
+  }, [reviews]);
+
+  const handleAddComment = async (reviewId: string) => {
+    const text = newComments[reviewId]?.trim();
+    if (!text || !user) return;
+
+    try {
+      await addDoc(collection(db, "reviews", reviewId, "comments"), {
+        text,
+        createdAt: new Date(),
+        createdBy: user.displayName || "Usuário",
+        userId: user.uid,
+        likedBy: [],
+        avatarUrl: user.photoURL || null,
+      });
+
+      setNewComments((prev) => ({ ...prev, [reviewId]: "" }));
+    } catch (error) {
+      console.error("Erro ao adicionar comentário:", error);
+      Alert.alert("Erro", "Não foi possível adicionar o comentário.");
+    }
+  };
+
   const getDistanceText = (
     reviewLocation?: { latitude: number; longitude: number } | null
   ) => {
@@ -57,16 +114,6 @@ export default function HomeScreen() {
     return distance < 1000
       ? `${distance.toFixed(0)} m`
       : `${(distance / 1000).toFixed(2)} km`;
-  };
-
-  const toggleLike = async (reviewId: string, alreadyLiked: boolean) => {
-    if (!user?.uid) return;
-
-    const reviewRef = doc(db, "reviews", reviewId);
-
-    await updateDoc(reviewRef, {
-      likedBy: alreadyLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
-    });
   };
 
   const sortedAndFilteredReviews = () => {
@@ -118,66 +165,69 @@ export default function HomeScreen() {
             renderItem={({ item }) => {
               const distanceText = getDistanceText(item.location);
               const alreadyLiked = !!item.likedBy?.includes(user.uid);
+              const comments = latestComments[item.id] || [];
 
               return (
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("ReviewDetail", { review: item })
-                  }
-                >
-                  <View style={styles.reviewBox}>
-                    {item.imageUri && (
-                      <Image
-                        source={{ uri: item.imageUri }}
-                        style={styles.image}
-                      />
-                    )}
+                <View style={{ marginBottom: 24 }}>
+                  <ReviewCard
+                    review={item}
+                    distance={distanceText}
+                    liked={alreadyLiked}
+                    showLike
+                    onLikeToggle={() =>
+                      toggleLike(item.id, user.uid, alreadyLiked)
+                    }
+                    onPress={() =>
+                      navigation.navigate("ReviewDetail", { review: item })
+                    }
+                  />
 
-                    <Text style={styles.title}>
-                      {item.placeName} — {item.rating}⭐
-                    </Text>
+                  {comments.map((comment) => (
+                    <CommentCard
+                      key={comment.id}
+                      comment={comment}
+                      reviewId={item.id}
+                      showReplies={false}
+                      currentUserId={user.uid}
+                      onLikeToggle={() => {}}
+                      onDelete={() => {}}
+                      onEdit={() => {}}
+                      onReply={() => {}}
+                    />
+                  ))}
 
-                    {item.address && (
-                      <Text style={styles.address}>{item.address}</Text>
-                    )}
-
-                    {distanceText && (
-                      <Text style={styles.distance}>
-                        Distância: {distanceText}
-                      </Text>
-                    )}
-
-                    <Text>{item.comment}</Text>
-
-                    <View style={styles.tagsBox}>
-                      {item.positives.map((tag) => (
-                        <Text key={tag} style={styles.positiveTag}>
-                          + {tag}
-                        </Text>
-                      ))}
-                      {item.negatives.map((tag) => (
-                        <Text key={tag} style={styles.negativeTag}>
-                          − {tag}
-                        </Text>
-                      ))}
-                    </View>
-
-                    <TouchableOpacity
-                      style={{ marginTop: 8 }}
-                      onPress={() => toggleLike(item.id, alreadyLiked)}
-                    >
-                      <Text
-                        style={{
-                          color: alreadyLiked ? "red" : "gray",
-                          fontSize: 14,
-                        }}
-                      >
-                        {alreadyLiked ? "❤️ Curtido" : "🤍 Curtir"} (
-                        {item.likedBy?.length || 0})
+                  {/* Campo para adicionar comentário */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 8,
+                    }}
+                  >
+                    <TextInput
+                      placeholder="Escreva um comentário..."
+                      value={newComments[item.id] || ""}
+                      onChangeText={(text) =>
+                        setNewComments((prev) => ({
+                          ...prev,
+                          [item.id]: text,
+                        }))
+                      }
+                      style={{
+                        flex: 1,
+                        backgroundColor: "#f0f0f0",
+                        borderRadius: 8,
+                        padding: 8,
+                        marginRight: 8,
+                      }}
+                    />
+                    <TouchableOpacity onPress={() => handleAddComment(item.id)}>
+                      <Text style={{ color: "#4CAF50", fontWeight: "bold" }}>
+                        Enviar
                       </Text>
                     </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
+                </View>
               );
             }}
             ListEmptyComponent={
@@ -185,19 +235,15 @@ export default function HomeScreen() {
             }
           />
 
-          <TouchableOpacity
-            style={{ marginRight: 16 }}
-            onPress={() => navigation.navigate("Favorites")}
-          >
-            <TouchableOpacity
-              style={{ marginRight: 16 }}
-              onPress={() => navigation.navigate("Map")}
-            >
+          <View style={{ flexDirection: "row", gap: 16, marginTop: 12 }}>
+            <TouchableOpacity onPress={() => navigation.navigate("Map")}>
               <Text style={{ color: "#4CAF50" }}>Mapa 🗺️</Text>
             </TouchableOpacity>
 
-            <Text style={{ color: "#4CAF50" }}>Favoritos ❤️</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Favorites")}>
+              <Text style={{ color: "#4CAF50" }}>Favoritos ❤️</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={styles.floatingButton}
