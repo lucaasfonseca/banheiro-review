@@ -7,5 +7,6 @@ export type RootStackParamList = {
   AddReview: { review?: Review };
   ReviewDetail: { review: Review };
   Favorites: undefined;
-  Map: undefined; // ⬅️ adicione aqui
+  Map: undefined;
+  Profile: undefined;
 };

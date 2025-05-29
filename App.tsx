@@ -8,11 +8,13 @@ import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { ReviewProvider } from "./src/context/ReviewContext"; // <-- AQUI
 
+import { CommentProvider } from "./src/context/CommentContext";
 import AddReviewScreen from "./src/screens/AddReviewScreen";
 import FavoritesScreen from "./src/screens/FavoritesScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import MapScreen from "./src/screens/MapScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import ReviewDetailScreen from "./src/screens/ReviewDetailScreen";
 import { RootStackParamList } from "./src/types/navigation";
@@ -35,6 +37,7 @@ function Routes() {
       {user ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="AddReview" component={AddReviewScreen} />
           <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} />
           <Stack.Screen name="Favorites" component={FavoritesScreen} />
@@ -56,9 +59,11 @@ export default function App() {
   return (
     <AuthProvider>
       <ReviewProvider>
-        <NavigationContainer>
-          <Routes />
-        </NavigationContainer>
+        <CommentProvider>
+          <NavigationContainer>
+            <Routes />
+          </NavigationContainer>
+        </CommentProvider>
       </ReviewProvider>
     </AuthProvider>
   );

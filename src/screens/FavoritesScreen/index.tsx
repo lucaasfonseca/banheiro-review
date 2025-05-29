@@ -1,9 +1,9 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import React from "react";
-import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { FlatList, SafeAreaView, Text } from "react-native";
+import ReviewCard from "../../components/ReviewCard";
 import { useAuth } from "../../context/AuthContext";
-import { useReviews } from "../../context/ReviewContext";
+import { toggleLike, useReviews } from "../../context/ReviewContext";
 import { RootStackParamList } from "../../types/navigation";
 import { styles } from "./styles";
 
@@ -35,23 +35,21 @@ export default function FavoritesScreen() {
         ListEmptyComponent={
           <Text style={styles.empty}>Nenhuma avaliação favoritada.</Text>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("ReviewDetail", { review: item })
-            }
-          >
-            <View style={styles.reviewBox}>
-              {item.imageUri && (
-                <Image source={{ uri: item.imageUri }} style={styles.image} />
-              )}
-              <Text style={styles.title}>
-                {item.placeName} — {item.rating}⭐
-              </Text>
-              <Text>{item.comment}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const alreadyLiked = !!item.likedBy?.includes(user.uid);
+
+          return (
+            <ReviewCard
+              review={item}
+              liked={alreadyLiked}
+              showLike
+              onLikeToggle={() => toggleLike(item.id, user.uid, alreadyLiked)}
+              onPress={() =>
+                navigation.navigate("ReviewDetail", { review: item })
+              }
+            />
+          );
+        }}
       />
     </SafeAreaView>
   );
