@@ -1,16 +1,19 @@
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import React, { useState } from "react";
+import { addDoc, collection, getDocs } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { db } from "../../services/firebase";
 import { styles } from "./styles";
 
 type Comment = {
   id: string;
   text: string;
   createdBy: string;
-  createdAt: any; // Pode ser Timestamp ou Date
+  createdAt: any;
   likedBy: string[];
   avatarUrl?: string;
+  replies?: Comment[];
 };
 
 type Props = {
@@ -18,10 +21,6 @@ type Props = {
   showReplies: boolean;
   comment: Comment;
   currentUserId?: string;
-  onLikeToggle?: () => void;
-  onDelete?: () => void;
-  onEdit?: (text: string) => void;
-  onReply?: () => void;
 };
 
 export default function CommentCard({
@@ -29,13 +28,12 @@ export default function CommentCard({
   reviewId,
   showReplies,
   currentUserId,
-  onLikeToggle,
-  onDelete,
-  onEdit,
-  onReply,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const [replying, setReplying] = useState(false);
   const [editedText, setEditedText] = useState(comment.text);
+  const [replyText, setReplyText] = useState("");
+  const [replies, setReplies] = useState<Comment[]>([]);
 
   const isOwner = comment.createdBy === currentUserId;
   const alreadyLiked = currentUserId
@@ -46,11 +44,44 @@ export default function CommentCard({
     comment.createdAt instanceof Date
       ? comment.createdAt
       : comment.createdAt.toDate(),
-    {
-      locale: ptBR,
-      addSuffix: true,
-    }
+    { locale: ptBR, addSuffix: true }
   );
+
+  useEffect(() => {
+    if (!showReplies) return;
+
+    const fetchReplies = async () => {
+      const snapshot = await getDocs(
+        collection(db, "reviews", reviewId, "comments", comment.id, "replies")
+      );
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Comment[];
+      setReplies(data);
+    };
+
+    fetchReplies();
+  }, [showReplies]);
+
+  const handleReply = async () => {
+    if (!replyText.trim() || !currentUserId) return;
+
+    await addDoc(
+      collection(db, "reviews", reviewId, "comments", comment.id, "replies"),
+      {
+        text: replyText.trim(),
+        createdAt: new Date(),
+        createdBy: "Você",
+        userId: currentUserId,
+        likedBy: [],
+        avatarUrl: null,
+      }
+    );
+
+    setReplyText("");
+    setReplying(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -81,12 +112,7 @@ export default function CommentCard({
               <TouchableOpacity onPress={() => setEditing(false)}>
                 <Text style={styles.cancel}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  onEdit?.(editedText);
-                  setEditing(false);
-                }}
-              >
+              <TouchableOpacity onPress={() => setEditing(false)}>
                 <Text style={styles.save}>Salvar</Text>
               </TouchableOpacity>
             </View>
@@ -96,15 +122,13 @@ export default function CommentCard({
             <Text style={styles.text}>{comment.text}</Text>
 
             <View style={styles.actions}>
-              <TouchableOpacity onPress={onLikeToggle}>
-                <Text style={styles.like}>
-                  {alreadyLiked ? "❤️ Curtido" : "🤍 Curtir"} (
-                  {comment.likedBy?.length || 0})
-                </Text>
-              </TouchableOpacity>
+              <Text style={styles.like}>
+                {alreadyLiked ? "❤️ Curtido" : "🤍 Curtir"} (
+                {comment.likedBy?.length || 0})
+              </Text>
 
               {showReplies && (
-                <TouchableOpacity onPress={onReply}>
+                <TouchableOpacity onPress={() => setReplying(true)}>
                   <Text style={styles.reply}>Responder</Text>
                 </TouchableOpacity>
               )}
@@ -114,7 +138,7 @@ export default function CommentCard({
                   <TouchableOpacity onPress={() => setEditing(true)}>
                     <Text style={styles.reply}>Editar</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={onDelete}>
+                  <TouchableOpacity>
                     <Text style={[styles.reply, { color: "red" }]}>
                       Excluir
                     </Text>
@@ -122,6 +146,40 @@ export default function CommentCard({
                 </>
               )}
             </View>
+
+            {replying && (
+              <View style={{ marginTop: 8 }}>
+                <TextInput
+                  value={replyText}
+                  onChangeText={setReplyText}
+                  placeholder="Escreva uma resposta..."
+                  style={styles.input}
+                  multiline
+                />
+                <View style={styles.editActions}>
+                  <TouchableOpacity onPress={() => setReplying(false)}>
+                    <Text style={styles.cancel}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleReply}>
+                    <Text style={styles.save}>Responder</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {Array.isArray(replies) && replies.length > 0 && (
+              <View style={{ marginTop: 12, marginLeft: 24 }}>
+                {replies.map((reply) => (
+                  <CommentCard
+                    key={reply.id}
+                    reviewId={reviewId}
+                    comment={reply}
+                    showReplies={false}
+                    currentUserId={currentUserId}
+                  />
+                ))}
+              </View>
+            )}
           </>
         )}
       </View>
