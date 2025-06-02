@@ -3,106 +3,43 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
-    paddingTop: 10,
-  },
-
-  searchInput: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 10,
-    fontSize: 16,
-  },
-
-  reviewBox: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
+    paddingHorizontal: 16,
   },
-
-  image: {
-    width: "100%",
-    height: 160,
+  searchInput: {
+    marginTop: 16,
+    backgroundColor: "#f0f0f0",
+    padding: 12,
     borderRadius: 8,
-    marginBottom: 8,
-  },
-
-  title: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-    color: "#333",
+    marginBottom: 12,
   },
-
-  address: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
+  empty: {
+    marginTop: 40,
+    fontSize: 16,
+    textAlign: "center",
+    color: "#999",
   },
-
-  distance: {
-    fontSize: 14,
-    color: "#4CAF50",
-    marginBottom: 6,
+  reviewBox: {
+    backgroundColor: "#f9f9f9",
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 12,
+    elevation: 1,
   },
-
-  tagsBox: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-  },
-
-  positiveTag: {
-    backgroundColor: "#d4f5d4",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginRight: 6,
-    fontSize: 12,
-    color: "#2e7d32",
-  },
-
-  negativeTag: {
-    backgroundColor: "#fcdede",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginRight: 6,
-    fontSize: 12,
-    color: "#c62828",
-  },
-
   floatingButton: {
     position: "absolute",
-    bottom: 30,
-    right: 20,
+    bottom: 24,
+    right: 24,
     backgroundColor: "#4CAF50",
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 50,
-    elevation: 5,
+    borderRadius: 999,
+    elevation: 4,
   },
-
   floatingButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
-  },
-
-  empty: {
-    textAlign: "center",
-    marginTop: 100,
-    fontSize: 16,
-    color: "#999",
   },
 });

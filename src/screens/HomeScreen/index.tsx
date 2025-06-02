@@ -1,13 +1,6 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
-import {
-  addDoc,
-  collection,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-} from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import haversine from "haversine";
 import React, { useEffect, useState } from "react";
 import {
@@ -20,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CommentCard from "../../components/CommentCard";
+import CommentBox from "../../components/CommentBox";
 import ReviewCard from "../../components/ReviewCard";
 import { useAuth } from "../../context/AuthContext";
 import { toggleLike, useReviews } from "../../context/ReviewContext";
@@ -40,7 +33,7 @@ export default function HomeScreen() {
   const [latestComments, setLatestComments] = useState<Record<string, any[]>>(
     {}
   );
-  const [newComments, setNewComments] = useState<Record<string, string>>({});
+  const [openComments, setOpenComments] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -64,8 +57,7 @@ export default function HomeScreen() {
     reviews.forEach((review) => {
       const q = query(
         collection(db, "reviews", review.id, "comments"),
-        orderBy("createdAt", "desc"),
-        limit(2)
+        orderBy("createdAt", "asc")
       );
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -82,31 +74,10 @@ export default function HomeScreen() {
     return () => unsubscribes.forEach((fn) => fn());
   }, [reviews]);
 
-  const handleAddComment = async (reviewId: string) => {
-    const text = newComments[reviewId]?.trim();
-    if (!text || !user) return;
-
-    try {
-      await addDoc(collection(db, "reviews", reviewId, "comments"), {
-        text,
-        createdAt: new Date(),
-        createdBy: user.displayName || "Usuário",
-        userId: user.uid,
-        likedBy: [],
-        avatarUrl: user.photoURL || null,
-      });
-
-      setNewComments((prev) => ({ ...prev, [reviewId]: "" }));
-    } catch (error) {
-      console.error("Erro ao adicionar comentário:", error);
-      Alert.alert("Erro", "Não foi possível adicionar o comentário.");
-    }
-  };
-
   const getDistanceText = (
     reviewLocation?: { latitude: number; longitude: number } | null
-  ) => {
-    if (!reviewLocation || !currentLocation) return null;
+  ): string | undefined => {
+    if (!reviewLocation || !currentLocation) return undefined;
     const distance = haversine(currentLocation, reviewLocation, {
       unit: "meter",
     });
@@ -168,65 +139,29 @@ export default function HomeScreen() {
               const comments = latestComments[item.id] || [];
 
               return (
-                <View style={{ marginBottom: 24 }}>
+                <View style={styles.reviewBox}>
                   <ReviewCard
                     review={item}
                     distance={distanceText}
                     liked={alreadyLiked}
                     showLike
+                    commentsCount={comments.length}
                     onLikeToggle={() =>
                       toggleLike(item.id, user.uid, alreadyLiked)
                     }
                     onPress={() =>
                       navigation.navigate("ReviewDetail", { review: item })
                     }
+                    onCommentPress={() =>
+                      setOpenComments((prev) =>
+                        prev === item.id ? null : item.id
+                      )
+                    }
                   />
 
-                  {comments.map((comment) => (
-                    <CommentCard
-                      key={comment.id}
-                      comment={comment}
-                      reviewId={item.id}
-                      showReplies={false}
-                      currentUserId={user.uid}
-                      onLikeToggle={() => {}}
-                      onDelete={() => {}}
-                      onEdit={() => {}}
-                      onReply={() => {}}
-                    />
-                  ))}
-
-                  {/* Campo para adicionar comentário */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 8,
-                    }}
-                  >
-                    <TextInput
-                      placeholder="Escreva um comentário..."
-                      value={newComments[item.id] || ""}
-                      onChangeText={(text) =>
-                        setNewComments((prev) => ({
-                          ...prev,
-                          [item.id]: text,
-                        }))
-                      }
-                      style={{
-                        flex: 1,
-                        backgroundColor: "#f0f0f0",
-                        borderRadius: 8,
-                        padding: 8,
-                        marginRight: 8,
-                      }}
-                    />
-                    <TouchableOpacity onPress={() => handleAddComment(item.id)}>
-                      <Text style={{ color: "#4CAF50", fontWeight: "bold" }}>
-                        Enviar
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  {openComments === item.id && (
+                    <CommentBox reviewId={item.id} comments={comments} />
+                  )}
                 </View>
               );
             }}
@@ -239,7 +174,6 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => navigation.navigate("Map")}>
               <Text style={{ color: "#4CAF50" }}>Mapa 🗺️</Text>
             </TouchableOpacity>
-
             <TouchableOpacity onPress={() => navigation.navigate("Favorites")}>
               <Text style={{ color: "#4CAF50" }}>Favoritos ❤️</Text>
             </TouchableOpacity>

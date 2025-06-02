@@ -6,23 +6,19 @@ export const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 12,
     marginBottom: 16,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#ccc",
   },
   content: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f5f5f5",
     borderRadius: 12,
     padding: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
   header: {
     flexDirection: "row",
@@ -30,7 +26,7 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   name: {
-    fontWeight: "600",
+    fontWeight: "bold",
     fontSize: 14,
     color: "#333",
   },
@@ -45,8 +41,8 @@ export const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: "row",
-    gap: 16,
     flexWrap: "wrap",
+    gap: 16,
   },
   like: {
     color: "#4CAF50",
@@ -59,13 +55,13 @@ export const styles = StyleSheet.create({
     fontSize: 13,
   },
   input: {
-    fontSize: 14,
-    color: "#333",
     backgroundColor: "#fff",
+    borderColor: "#ccc",
+    borderWidth: 1,
     borderRadius: 8,
     padding: 8,
-    borderWidth: 1,
-    borderColor: "#ddd",
+    fontSize: 14,
+    color: "#333",
     marginBottom: 8,
   },
   editActions: {
@@ -82,5 +78,12 @@ export const styles = StyleSheet.create({
     color: "#4CAF50",
     fontSize: 13,
     fontWeight: "600",
+  },
+  repliesContainer: {
+    marginTop: 12,
+    marginLeft: 24,
+    borderLeftWidth: 1,
+    borderLeftColor: "#ddd",
+    paddingLeft: 12,
   },
 });
