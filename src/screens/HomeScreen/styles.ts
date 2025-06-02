@@ -20,6 +20,13 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     color: "#999",
   },
+  reviewBox: {
+    backgroundColor: "#f9f9f9",
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 12,
+    elevation: 1,
+  },
   floatingButton: {
     position: "absolute",
     bottom: 24,
