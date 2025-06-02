@@ -6,17 +6,16 @@ import React from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-import { ReviewProvider } from "./src/context/ReviewContext"; // <-- AQUI
-
 import { CommentProvider } from "./src/context/CommentContext";
+import { ReviewProvider } from "./src/context/ReviewContext";
+
 import AddReviewScreen from "./src/screens/AddReviewScreen";
-import FavoritesScreen from "./src/screens/FavoritesScreen";
-import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import MapScreen from "./src/screens/MapScreen";
-import ProfileScreen from "./src/screens/ProfileScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import ReviewDetailScreen from "./src/screens/ReviewDetailScreen";
+
+import BottomTabs from "./src/navigation/BottomTabs";
 import { RootStackParamList } from "./src/types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,21 +35,17 @@ function Routes() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
         <>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="Main" component={BottomTabs} />
           <Stack.Screen name="AddReview" component={AddReviewScreen} />
           <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} />
-          <Stack.Screen name="Favorites" component={FavoritesScreen} />
-          <Stack.Screen
-            name="Map"
-            component={MapScreen}
-            options={{ headerShown: true, title: "Mapa" }}
-          />
+          <Stack.Screen name="Map" component={MapScreen} />
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
       )}
-      <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
   );
 }
