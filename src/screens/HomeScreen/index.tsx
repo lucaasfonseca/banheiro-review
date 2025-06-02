@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
@@ -28,10 +29,8 @@ import { db } from "../../services/firebase";
 import { RootStackParamList } from "../../types/navigation";
 import { styles } from "./styles";
 
-type NavigationProps = NavigationProp<RootStackParamList>;
-
 export default function HomeScreen() {
-  const navigation = useNavigation<NavigationProps>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { reviews } = useReviews();
   const { user, loading } = useAuth();
   const [currentLocation, setCurrentLocation] =
@@ -46,10 +45,7 @@ export default function HomeScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permissão negada",
-          "Não foi possível obter sua localização."
-        );
+        Alert.alert("Permissão negada", "Localização não autorizada.");
         return;
       }
 
@@ -95,10 +91,8 @@ export default function HomeScreen() {
         likedBy: [],
         avatarUrl: user.photoURL || null,
       });
-
       setNewComments((prev) => ({ ...prev, [reviewId]: "" }));
     } catch (error) {
-      console.error("Erro ao adicionar comentário:", error);
       Alert.alert("Erro", "Não foi possível adicionar o comentário.");
     }
   };
@@ -110,7 +104,6 @@ export default function HomeScreen() {
     const distance = haversine(currentLocation, reviewLocation, {
       unit: "meter",
     });
-
     return distance < 1000
       ? `${distance.toFixed(0)} m`
       : `${(distance / 1000).toFixed(2)} km`;
@@ -118,11 +111,9 @@ export default function HomeScreen() {
 
   const sortedAndFilteredReviews = () => {
     if (!currentLocation) return [];
-
     const filtered = reviews.filter((r) =>
       r.placeName.toLowerCase().includes(search.toLowerCase())
     );
-
     return filtered.sort((a, b) => {
       const distA = haversine(currentLocation, a.location, { unit: "meter" });
       const distB = haversine(currentLocation, b.location, { unit: "meter" });
@@ -137,122 +128,102 @@ export default function HomeScreen() {
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.empty}>
-          Você precisa estar logado para ver o feed.
-        </Text>
+        <Text style={styles.empty}>Você precisa estar logado para ver o feed.</Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {!currentLocation ? (
-        <ActivityIndicator size="large" style={{ marginTop: 100 }} />
-      ) : (
-        <>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por nome do local..."
-            value={search}
-            onChangeText={setSearch}
+      <View style={styles.header}>
+        <Text style={styles.title}>Banheiro Review 🚽</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+          <Image
+            source={{ uri: user.photoURL || undefined }}
+            style={styles.avatar}
           />
+        </TouchableOpacity>
+      </View>
 
-          <FlatList
-            data={sortedAndFilteredReviews()}
-            keyExtractor={(item) => item.id}
-            initialNumToRender={5}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            renderItem={({ item }) => {
-              const distanceText = getDistanceText(item.location);
-              const alreadyLiked = !!item.likedBy?.includes(user.uid);
-              const comments = latestComments[item.id] || [];
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Buscar por nome do local..."
+        value={search}
+        onChangeText={setSearch}
+      />
 
-              return (
-                <View style={{ marginBottom: 24 }}>
-                  <ReviewCard
-                    review={item}
-                    distance={distanceText}
-                    liked={alreadyLiked}
-                    showLike
-                    onLikeToggle={() =>
-                      toggleLike(item.id, user.uid, alreadyLiked)
-                    }
-                    onPress={() =>
-                      navigation.navigate("ReviewDetail", { review: item })
-                    }
-                  />
+      <FlatList
+        data={sortedAndFilteredReviews()}
+        keyExtractor={(item) => item.id}
+        initialNumToRender={5}
+        contentContainerStyle={styles.reviewList}
+        renderItem={({ item }) => {
+          const distanceText = getDistanceText(item.location);
+          const alreadyLiked = !!item.likedBy?.includes(user.uid);
+          const comments = latestComments[item.id] || [];
 
-                  {comments.map((comment) => (
-                    <CommentCard
-                      key={comment.id}
-                      comment={comment}
-                      reviewId={item.id}
-                      showReplies={false}
-                      currentUserId={user.uid}
-                      onLikeToggle={() => {}}
-                      onDelete={() => {}}
-                      onEdit={() => {}}
-                      onReply={() => {}}
-                    />
-                  ))}
+          return (
+            <View style={styles.cardWrapper}>
+              <ReviewCard
+                review={item}
+                distance={distanceText}
+                liked={alreadyLiked}
+                showLike
+                onLikeToggle={() =>
+                  toggleLike(item.id, user.uid, alreadyLiked)
+                }
+                onPress={() =>
+                  navigation.navigate("ReviewDetail", { review: item })
+                }
+              />
 
-                  {/* Campo para adicionar comentário */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginTop: 8,
-                    }}
-                  >
-                    <TextInput
-                      placeholder="Escreva um comentário..."
-                      value={newComments[item.id] || ""}
-                      onChangeText={(text) =>
-                        setNewComments((prev) => ({
-                          ...prev,
-                          [item.id]: text,
-                        }))
-                      }
-                      style={{
-                        flex: 1,
-                        backgroundColor: "#f0f0f0",
-                        borderRadius: 8,
-                        padding: 8,
-                        marginRight: 8,
-                      }}
-                    />
-                    <TouchableOpacity onPress={() => handleAddComment(item.id)}>
-                      <Text style={{ color: "#4CAF50", fontWeight: "bold" }}>
-                        Enviar
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            }}
-            ListEmptyComponent={
-              <Text style={styles.empty}>Nenhuma avaliação encontrada.</Text>
-            }
-          />
+              {comments.map((comment) => (
+                <CommentCard
+                  key={comment.id}
+                  comment={comment}
+                  reviewId={item.id}
+                  showReplies={false}
+                  currentUserId={user.uid}
+                />
+              ))}
 
-          <View style={{ flexDirection: "row", gap: 16, marginTop: 12 }}>
-            <TouchableOpacity onPress={() => navigation.navigate("Map")}>
-              <Text style={{ color: "#4CAF50" }}>Mapa 🗺️</Text>
-            </TouchableOpacity>
+              <View style={styles.commentInputBox}>
+                <TextInput
+                  placeholder="Escreva um comentário..."
+                  value={newComments[item.id] || ""}
+                  onChangeText={(text) =>
+                    setNewComments((prev) => ({
+                      ...prev,
+                      [item.id]: text,
+                    }))
+                  }
+                  style={styles.commentInput}
+                />
+                <TouchableOpacity onPress={() => handleAddComment(item.id)}>
+                  <Text style={styles.commentSend}>Enviar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        }}
+        ListEmptyComponent={<Text style={styles.empty}>Nenhuma avaliação encontrada.</Text>}
+      />
 
-            <TouchableOpacity onPress={() => navigation.navigate("Favorites")}>
-              <Text style={{ color: "#4CAF50" }}>Favoritos ❤️</Text>
-            </TouchableOpacity>
-          </View>
+      <View style={styles.bottomLinks}>
+        <TouchableOpacity onPress={() => navigation.navigate("Map")}>
+          <Text style={styles.link}>Mapa 🗺️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Favorites")}>
+          <Text style={styles.link}>Favoritos ❤️</Text>
+        </TouchableOpacity>
+      </View>
 
-          <TouchableOpacity
-            style={styles.floatingButton}
-            onPress={() => navigation.navigate("AddReview", {})}
-          >
-            <Text style={styles.floatingButtonText}>Adicionar Avaliação</Text>
-          </TouchableOpacity>
-        </>
-      )}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => navigation.navigate("AddReview", {})}
+      >
+        <Text style={styles.floatingButtonText}>＋ Avaliação</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
