@@ -14,7 +14,7 @@ export const styles = StyleSheet.create({
     marginBottom: -20,
     justifyContent: "center",
     alignItems: "center",
-    // perspective: 1000,
+    // perspective: 1200,
   },
   doorImage: {
     width: "100%",
