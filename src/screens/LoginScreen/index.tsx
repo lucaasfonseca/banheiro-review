@@ -2,7 +2,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { MotiView } from "moti";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Image,
@@ -25,14 +25,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [doorOpen, setDoorOpen] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDoorOpen(true);
-    }, 800); // atraso antes de abrir
-
-    return () => clearTimeout(timer);
-  }, []);
-
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Erro", "Preencha todos os campos.");
@@ -41,6 +33,11 @@ export default function LoginScreen() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      setDoorOpen(true);
+
+      setTimeout(() => {
+        navigation.navigate("Main");
+      }, 1200); // Espera a animação terminar
     } catch (err: any) {
       Alert.alert("Erro", err.message || "Falha ao fazer login.");
     }
@@ -52,17 +49,11 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <MotiView
-        from={{
-          rotateY: "0deg",
-          opacity: 1,
-        }}
-        animate={{
-          rotateY: doorOpen ? "90deg" : "0deg",
-          opacity: doorOpen ? 0 : 1,
-        }}
+        from={{ rotateY: "0deg" }}
+        animate={{ rotateY: doorOpen ? "90deg" : "0deg" }}
         transition={{
           type: "timing",
-          duration: 1200,
+          duration: 1000,
         }}
         style={styles.doorContainer}
       >
